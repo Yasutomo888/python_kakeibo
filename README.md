@@ -46,3 +46,6 @@ SQLiteへ取り込み、SQLで集計
 月別×カテゴリ（ピボット風）出力
 
 入力バリデーション強化
+
+python src/import_sqlite.py --input data/kakeibo.csv --db data/kakeibo.db
+python src/report_sql.py --db data/kakeibo.db --month 2026-01
