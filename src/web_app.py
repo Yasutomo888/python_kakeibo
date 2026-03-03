@@ -63,26 +63,49 @@ def index():
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <title>python_kakeibo</title>
         <style>
-          body { font-family: system-ui, -apple-system, sans-serif; padding: 16px; line-height: 1.6; }
-          input, button { font-size: 16px; padding: 8px; }
-          table { border-collapse: collapse; margin-top: 12px; }
-          th, td { border: 1px solid #ddd; padding: 8px; }
-          th { background: #f5f5f5; }
+          body { font-family: system-ui, -apple-system, sans-serif; padding: 16px; line-height: 1.7; }
+          a, button, input { font-size: 16px; }
+          input, button { padding: 8px; }
+          /* Skip link */
+          .skip-link {
+            position: absolute; left: -999px; top: 0;
+            background: #000; color: #fff; padding: 8px;
+          }
+          .skip-link:focus { left: 8px; top: 8px; z-index: 9999; }
+          /* Focus visible */
+          :focus-visible { outline: 3px solid #005fcc; outline-offset: 2px; }
+          .help { color: #444; font-size: 14px; }
+          .btn { padding: 10px 12px; }
         </style>
       </head>
       <body>
-        <h1>python_kakeibo</h1>
-        <p>月を入力して集計します（例: 2026-01）。空欄なら全期間の合計を表示。</p>
+        <a class="skip-link" href="#main">本文へスキップ</a>
 
-        <form action="/report" method="get">
-          <label for="month">対象月（YYYY-MM）</label><br>
-          <input id="month" name="month" type="text" inputmode="numeric" placeholder="2026-01">
-          <button type="submit">集計</button>
-        </form>
+        <header>
+          <h1>python_kakeibo</h1>
+          <p>月を入力して集計します（例: 2026-01）。空欄なら全期間を表示します。</p>
+        </header>
 
-        <p style="margin-top: 16px;">
-          <a href="/report">全期間を表示</a>
-        </p>
+        <main id="main">
+          <form action="/report" method="get" novalidate>
+            <label for="month">対象月（YYYY-MM）</label><br>
+            <input
+              id="month" name="month" type="text"
+              inputmode="numeric" autocomplete="off"
+              placeholder="2026-01"
+              aria-describedby="month-help"
+              pattern="\\d{4}-\\d{2}"
+            >
+            <div id="month-help" class="help">
+              例：2026-01（空欄なら全期間）
+            </div>
+            <p>
+              <button class="btn" type="submit">集計</button>
+            </p>
+          </form>
+
+          <p><a href="/report">全期間を表示</a></p>
+        </main>
       </body>
     </html>
     """
@@ -90,6 +113,18 @@ def index():
 @app.get("/report")
 def report():
     month = request.args.get("month", "").strip() or None
+
+    import re
+    ...
+    month_raw = request.args.get("month", "").strip()
+    month = month_raw or None
+
+    if month_raw and not re.fullmatch(r"\d{4}-\d{2}", month_raw):
+        return f"""
+        <h1>入力エラー</h1>
+        <p role="alert">対象月は YYYY-MM 形式で入力してください（例: 2026-01）。</p>
+        <p><a href="/">戻る</a></p>
+        """, 400
 
     if not DB_PATH.exists():
         return f"""
@@ -132,20 +167,33 @@ def report():
         <p><a href="{download_url}">CSVをダウンロード</a></p>
 
         <h2>カテゴリ別</h2>
-        <table border="1" cellspacing="0" cellpadding="6">
-          <thead><tr><th>カテゴリ</th><th>金額</th><th>割合</th></tr></thead>
+        <table>
+          <caption>カテゴリごとの合計と割合</caption>
+          <thead>
+            <tr>
+              <th scope="col">カテゴリ</th>
+              <th scope="col">金額</th>
+              <th scope="col">割合</th>
+            </tr>
+          </thead>
           <tbody>
             {rows_cat_html or "<tr><td colspan='3'>データなし</td></tr>"}
           </tbody>
         </table>
 
         <h2>日付別</h2>
-        <table border="1" cellspacing="0" cellpadding="6">
-          <thead><tr><th>日付</th><th>金額</th></tr></thead>
+        <table>
+          <caption>日付ごとの合計</caption>
+          <thead>
+             <tr>
+               <th scope="col">日付</th>
+               <th scope="col">金額</th>
+             </tr>
+          </thead>
           <tbody>
             {rows_date_html or "<tr><td colspan='2'>データなし</td></tr>"}
           </tbody>
-        </table>
+       </table>
 
         <p style="margin-top: 16px;"><a href="/">戻る</a></p>
       </body>
