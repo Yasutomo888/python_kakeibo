@@ -11,10 +11,33 @@ app = Flask(__name__)
 
 DB_PATH = Path("data/kakeibo.db")
 
+def list_months() -> list[str]:
+    conn = sqlite3.connect(DB_PATH)
+    cur = conn.cursor()
+    cur.execute("""
+        SELECT DISTINCT SUBSTR(date,1,7) AS month
+        FROM expenses
+        ORDER BY month
+    """)
+    months = [r[0] for r in cur.fetchall()]
+    conn.close()
+    return months
 
 def query_report(month: str | None):
     conn = sqlite3.connect(DB_PATH)
     cur = conn.cursor()
+
+    def list_months() -> list[str]:
+        conn = sqlite3.connect(DB_PATH)
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT DISTINCT SUBSTR(date, 1, 7) AS month
+            FROM expenses
+            ORDER BY month
+        """)
+        months = [row[0] for row in cur.fetchall()]
+        conn.close()
+        return months
 
     where = ""
     params = ()
@@ -55,7 +78,10 @@ def query_report(month: str | None):
 
 @app.get("/")
 def index():
-    return """
+    months = list_months() if DB_PATH.exists() else []
+    options = "\n".join(f'<option value="{m}">{m}</option>' for m in months)
+
+    return f"""
     <!doctype html>
     <html lang="ja">
       <head>
@@ -63,19 +89,19 @@ def index():
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <title>python_kakeibo</title>
         <style>
-          body { font-family: system-ui, -apple-system, sans-serif; padding: 16px; line-height: 1.7; }
-          a, button, input { font-size: 16px; }
-          input, button { padding: 8px; }
+          body {{ font-family: system-ui, -apple-system, sans-serif; padding: 16px; line-height: 1.7; }}
+          a, button, select {{ font-size: 16px; }}
+          select, button {{ padding: 8px; }}
           /* Skip link */
-          .skip-link {
+          .skip-link {{
             position: absolute; left: -999px; top: 0;
             background: #000; color: #fff; padding: 8px;
-          }
-          .skip-link:focus { left: 8px; top: 8px; z-index: 9999; }
+          }}
+          .skip-link:focus {{ left: 8px; top: 8px; z-index: 9999; }}
           /* Focus visible */
-          :focus-visible { outline: 3px solid #005fcc; outline-offset: 2px; }
-          .help { color: #444; font-size: 14px; }
-          .btn { padding: 10px 12px; }
+          :focus-visible {{ outline: 3px solid #005fcc; outline-offset: 2px; }}
+          .help {{ color: #444; font-size: 14px; }}
+          .btn {{ padding: 10px 12px; }}
         </style>
       </head>
       <body>
@@ -83,21 +109,18 @@ def index():
 
         <header>
           <h1>python_kakeibo</h1>
-          <p>月を入力して集計します（例: 2026-01）。空欄なら全期間を表示します。</p>
+          <p>月を選択して集計します。空欄なら全期間を表示します。</p>
         </header>
 
         <main id="main">
           <form action="/report" method="get" novalidate>
             <label for="month">対象月（YYYY-MM）</label><br>
-            <input
-              id="month" name="month" type="text"
-              inputmode="numeric" autocomplete="off"
-              placeholder="2026-01"
-              aria-describedby="month-help"
-              pattern="\\d{4}-\\d{2}"
-            >
+            <select id="month" name="month" aria-describedby="month-help">
+              <option value="">（全期間）</option>
+              {options}
+            </select>
             <div id="month-help" class="help">
-              例：2026-01（空欄なら全期間）
+              DBに登録されている月から選択できます
             </div>
             <p>
               <button class="btn" type="submit">集計</button>

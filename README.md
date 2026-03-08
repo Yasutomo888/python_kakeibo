@@ -49,3 +49,22 @@ SQLiteへ取り込み、SQLで集計
 
 python src/import_sqlite.py --input data/kakeibo.csv --db data/kakeibo.db
 python src/report_sql.py --db data/kakeibo.db --month 2026-01
+
+python src/import_sqlite.py --input data/kakeibo.csv --db data/kakeibo.db
+python src/web_app.py
+# ブラウザ: http://127.0.0.1:5001/
+
+## Web版（Flask）
+SQLiteに取り込んだ家計簿データを、ブラウザで集計表示し、CSVレポートをダウンロードできます。
+
+### 起動手順
+```bash
+python src/import_sqlite.py --input data/kakeibo.csv --db data/kakeibo.db
+python src/web_app.py
+
+## アクセシビリティ対応（Web版）
+- Skip link（本文へスキップ）を実装
+- キーボード操作時のフォーカス表示（:focus-visible）
+- mainランドマーク、見出し構造（h1→h2）
+- テーブルのcaptionと見出しセル（th scope）で構造を明示
+- 対象月入力のバリデーション（YYYY-MM）とエラー表示（role="alert"）
