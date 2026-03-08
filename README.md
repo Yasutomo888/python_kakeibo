@@ -28,6 +28,14 @@
 - 集計結果をCSVダウンロード
 - アクセシビリティ対応
 
+## スクリーンショット
+
+### トップ画面
+![トップ画面](assets/screenshots/top-page.png)
+
+### レポート画面
+![レポート画面](assets/screenshots/report-page.png)
+
 ---
 
 ## ディレクトリ構成
